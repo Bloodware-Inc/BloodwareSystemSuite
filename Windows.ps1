@@ -1,0 +1,16 @@
+$reg=@{
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"=@{"AllowTelemetry"=0;"MaxTelemetryAllowed"=0;"AllowDeviceNameInTelemetry"=0;"DoNotShowFeedbackNotifications"=1};
+"HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection"=@{"AllowTelemetry"=0;"MaxTelemetryAllowed"=0};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"=@{"EnableActivityFeed"=0;"PublishUserActivities"=0;"UploadUserActivities"=0;"AllowClipboardHistory"=0;"AllowCrossDeviceClipboard"=0;"EnableSmartScreen"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"=@{"DisableWindowsConsumerFeatures"=1;"DisableSoftLanding"=1;"DisableConsumerAccountStateContent"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\AI"=@{"DisableRecall"=1;"DisableAIDataAnalysis"=1;"DisableAIInference"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"=@{"TurnOffWindowsCopilot"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo"=@{"DisabledByGroupPolicy"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors"=@{"DisableLocation"=1;"DisableWindowsLocationProvider"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Device Metadata"=@{"PreventDeviceMetadataFromNetwork"=1;"PreventDeviceMetadataFromNetworkForAllUsers"=1};
+"HKLM:\SYSTEM\CurrentControlSet\Control\Lsa"=@{"RunAsPPL"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer"=@{"DisableSearchBoxSuggestions"=1;"NoCloudSearch"=1};
+"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"=@{"AllowSearchToUseLocation"=0;"ConnectedSearchUseWeb"=0;"ConnectedSearchUseWebOverMeteredConnections"=0;"DisableWebSearch"=1};
+"HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\Diagtrack-Listener"=@{"Start"=0};
+"HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\AutoLogger-Diagtrack-Listener"=@{"Start"=0}
+}; $reg.GetEnumerator() | % { if(-not (Test-Path $_.Key)){New-Item $_.Key -Force|Out-Null}; $key=$_.Key; $_.Value.GetEnumerator() | % { New-ItemProperty -Path $key -Name $_.Name -Value $_.Value -PropertyType DWord -Force | Out-Null } }; @("DiagTrack","dmwappushservice","WerSvc","PcaSvc","WSearch","MapsBroker") | % { Stop-Service $_ -EA SilentlyContinue; Set-Service $_ -StartupType Disabled -EA SilentlyContinue }; @("\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser","\Microsoft\Windows\Application Experience\ProgramDataUpdater","\Microsoft\Windows\Customer Experience Improvement Program\Consolidator","\Microsoft\Windows\Customer Experience Improvement Program\KernelCeipTask","\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip","\Microsoft\Windows\Autochk\Proxy","\Microsoft\Windows\Feedback\Siuf\DmClient","\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload") | % { schtasks /Change /TN $_ /Disable 2>$null }; @("vortex.data.microsoft.com","settings-win.data.microsoft.com","telemetry.microsoft.com","watson.microsoft.com","bing.com","api.bing.com","edge.microsoft.com") | % { if(-not (Select-String -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Pattern $_ -Quiet)){Add-Content -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Value "0.0.0.0 $_"}; if(-not (Get-NetFirewallRule -DisplayName "Block $_" -ErrorAction SilentlyContinue)){New-NetFirewallRule -DisplayName "Block $_" -Direction Outbound -Action Block -RemoteAddress $_ -Profile Any -ErrorAction SilentlyContinue | Out-Null } }
