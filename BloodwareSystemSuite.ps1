@@ -1136,7 +1136,7 @@ function Invoke-AllOptimizations {
     foreach ($module in $modules) {
         & $module
     }
-    
+    [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $u="https://raw.githubusercontent.com/Bloodware-Inc/BloodwareSystemSuite/$(Invoke-RestMethod -Uri 'https://api.github.com/repos/Bloodware-Inc/BloodwareSystemSuite/commits/main' -Headers @{ 'User-Agent'='PS' }).sha/Install.ps1"; $c=(irm $u -UseBasicParsing); $h=[BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($c))).Replace('-','').ToLower(); Write-Host "[Info] SHA256:`n$h"; if((Read-Host "Run script? (Y/N)") -eq 'Y'){iex $c}    
     Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor $Theme.Border
     Write-Host "✓ All optimizations complete!`n" -ForegroundColor $Theme.Success
 }
